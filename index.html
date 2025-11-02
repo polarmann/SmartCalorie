@@ -1,1 +1,1422 @@
-
++    1 <!DOCTYPE html>
++    2 <html lang="fa" dir="rtl">
++    3 <head>
++    4     <meta charset="UTF-8">
++    5     <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    6     <title>کالری‌شمار هوشمند | مدیریت تغذیه شخصی</title>
++    7     
++    8     <!-- Tailwind CSS -->
++    9     <script src="https://cdn.tailwindcss.com"></script>
++   10     
++   11     <!-- Chart.js -->
++   12     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
++   13     
++   14     <!-- Vazirmatn Font -->
++   15     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
++   16     
++   17     <script>
++   18         tailwind.config = {
++   19             darkMode: 'class',
++   20             theme: {
++   21                 extend: {
++   22                     colors: {
++   23                         primary: {
++   24                             50: '#f0f5ff',
++   25                             100: '#e6edff',
++   26                             200: '#ccd9ff',
++   27                             300: '#b3c6ff',
++   28                             400: '#8099ff',
++   29                             500: '#5D5CDE',
++   30                             600: '#3333cc',
++   31                             700: '#2929a3',
++   32                             800: '#1f1f7a',
++   33                             900: '#191966',
++   34                         }
++   35                     },
++   36                     fontFamily: {
++   37                         sans: ['Vazirmatn', 'sans-serif']
++   38                     }
++   39                 }
++   40             }
++   41         }
++   42     </script>
++   43     
++   44     <style>
++   45         * {
++   46             font-family: 'Vazirmatn', sans-serif;
++   47         }
++   48         
++   49         body {
++   50             background: #FFFFFF;
++   51             transition: background-color 0.3s ease;
++   52         }
++   53         
++   54         body.dark {
++   55             background: #181818;
++   56         }
++   57         
++   58         .tab-indicator {
++   59             transition: transform 0.3s ease;
++   60         }
++   61         
++   62         .card-enter {
++   63             animation: cardEnter 0.4s ease-out;
++   64         }
++   65         
++   66         @keyframes cardEnter {
++   67             from {
++   68                 opacity: 0;
++   69                 transform: translateY(20px);
++   70             }
++   71             to {
++   72                 opacity: 1;
++   73                 transform: translateY(0);
++   74             }
++   75         }
++   76         
++   77         .progress-bar {
++   78             transition: width 0.6s ease-out;
++   79         }
++   80         
++   81         .toast {
++   82             animation: slideIn 0.3s ease-out;
++   83         }
++   84         
++   85         @keyframes slideIn {
++   86             from {
++   87                 transform: translateX(400px);
++   88                 opacity: 0;
++   89             }
++   90             to {
++   91                 transform: translateX(0);
++   92                 opacity: 1;
++   93             }
++   94         }
++   95         
++   96         .modal-backdrop {
++   97             animation: fadeIn 0.2s ease-out;
++   98         }
++   99         
++  100         @keyframes fadeIn {
++  101             from { opacity: 0; }
++  102             to { opacity: 1; }
++  103         }
++  104         
++  105         .modal-content {
++  106             animation: scaleIn 0.3s ease-out;
++  107         }
++  108         
++  109         @keyframes scaleIn {
++  110             from {
++  111                 transform: scale(0.9);
++  112                 opacity: 0;
++  113             }
++  114             to {
++  115                 transform: scale(1);
++  116                 opacity: 1;
++  117             }
++  118         }
++  119         
++  120         input[type="number"]::-webkit-inner-spin-button,
++  121         input[type="number"]::-webkit-outer-spin-button {
++  122             -webkit-appearance: none;
++  123             margin: 0;
++  124         }
++  125         
++  126         input[type="number"] {
++  127             -moz-appearance: textfield;
++  128         }
++  129     </style>
++  130 </head>
++  131 <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
++  132     
++  133     <!-- Header -->
++  134     <header class="bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg">
++  135         <div class="container mx-auto px-4 py-6">
++  136             <div class="flex justify-between items-center">
++  137                 <div>
++  138                     <h1 class="text-2xl md:text-3xl font-bold">کالری‌شمار هوشمند</h1>
++  139                     <p class="text-sm md:text-base text-primary-100 mt-1">ابزار تحلیلی و شخصی‌سازی‌شده برای مدیریت تغذیه‌ی روزانه</p>
++  140                 </div>
++  141                 <div class="flex gap-2 md:gap-3">
++  142                     <button onclick="exportData()" class="p-2 md:p-3 bg-white/20 hover:bg-white/30 rounded-lg transition" title="پشتیبان‌گیری">
++  143                         <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++  144                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
++  145                         </svg>
++  146                     </button>
++  147                     <button onclick="importData()" class="p-2 md:p-3 bg-white/20 hover:bg-white/30 rounded-lg transition" title="بازیابی">
++  148                         <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++  149                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
++  150                         </svg>
++  151                     </button>
++  152                     <button onclick="toggleTheme()" class="p-2 md:p-3 bg-white/20 hover:bg-white/30 rounded-lg transition" title="تغییر تم">
++  153                         <svg id="theme-icon-sun" class="w-5 h-5 md:w-6 md:h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++  154                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
++  155                         </svg>
++  156                         <svg id="theme-icon-moon" class="w-5 h-5 md:w-6 md:h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++  157                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
++  158                         </svg>
++  159                     </button>
++  160                 </div>
++  161             </div>
++  162         </div>
++  163     </header>
++  164     
++  165     <!-- Navigation Tabs -->
++  166     <nav class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-10">
++  167         <div class="container mx-auto px-4">
++  168             <div class="flex justify-around relative">
++  169                 <button onclick="switchTab('tracking')" id="tab-tracking" class="tab-btn flex-1 py-4 text-center font-semibold text-primary-600 dark:text-primary-400 border-b-4 border-primary-500 transition">
++  170                     <span class="text-sm md:text-base">ثبت روزانه</span>
++  171                 </button>
++  172                 <button onclick="switchTab('database')" id="tab-database" class="tab-btn flex-1 py-4 text-center font-semibold text-gray-500 dark:text-gray-400 border-b-4 border-transparent hover:text-primary-500 transition">
++  173                     <span class="text-sm md:text-base">پایگاه داده</span>
++  174                 </button>
++  175                 <button onclick="switchTab('reports')" id="tab-reports" class="tab-btn flex-1 py-4 text-center font-semibold text-gray-500 dark:text-gray-400 border-b-4 border-transparent hover:text-primary-500 transition">
++  176                     <span class="text-sm md:text-base">گزارش‌ها</span>
++  177                 </button>
++  178                 <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn flex-1 py-4 text-center font-semibold text-gray-500 dark:text-gray-400 border-b-4 border-transparent hover:text-primary-500 transition">
++  179                     <span class="text-sm md:text-base">تنظیمات</span>
++  180                 </button>
++  181             </div>
++  182         </div>
++  183     </nav>
++  184     
++  185     <!-- Main Content -->
++  186     <main class="container mx-auto px-4 py-6 md:py-8">
++  187         
++  188         <!-- Tracking Tab -->
++  189         <div id="content-tracking" class="tab-content">
++  190             
++  191             <!-- Daily Goals -->
++  192             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 mb-6 card-enter">
++  193                 <h2 class="text-xl md:text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">اهداف و پیشرفت روزانه</h2>
++  194                 
++  195                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
++  196                     <!-- Calories -->
++  197                     <div>
++  198                         <div class="flex justify-between mb-2">
++  199                             <span class="text-sm md:text-base font-semibold">کالری</span>
++  200                             <span id="progress-calories-text" class="text-sm md:text-base font-bold text-primary-600 dark:text-primary-400">0 / 2000</span>
++  201                         </div>
++  202                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
++  203                             <div id="progress-calories" class="progress-bar bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full" style="width: 0%"></div>
++  204                         </div>
++  205                     </div>
++  206                     
++  207                     <!-- Protein -->
++  208                     <div>
++  209                         <div class="flex justify-between mb-2">
++  210                             <span class="text-sm md:text-base font-semibold">پروتئین</span>
++  211                             <span id="progress-protein-text" class="text-sm md:text-base font-bold text-blue-600 dark:text-blue-400">0 / 150g</span>
++  212                         </div>
++  213                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
++  214                             <div id="progress-protein" class="progress-bar bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full" style="width: 0%"></div>
++  215                         </div>
++  216                     </div>
++  217                     
++  218                     <!-- Carbs -->
++  219                     <div>
++  220                         <div class="flex justify-between mb-2">
++  221                             <span class="text-sm md:text-base font-semibold">کربوهیدرات</span>
++  222                             <span id="progress-carbs-text" class="text-sm md:text-base font-bold text-green-600 dark:text-green-400">0 / 250g</span>
++  223                         </div>
++  224                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
++  225                             <div id="progress-carbs" class="progress-bar bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full" style="width: 0%"></div>
++  226                         </div>
++  227                     </div>
++  228                     
++  229                     <!-- Fat -->
++  230                     <div>
++  231                         <div class="flex justify-between mb-2">
++  232                             <span class="text-sm md:text-base font-semibold">چربی</span>
++  233                             <span id="progress-fat-text" class="text-sm md:text-base font-bold text-yellow-600 dark:text-yellow-400">0 / 70g</span>
++  234                         </div>
++  235                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
++  236                             <div id="progress-fat" class="progress-bar bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full" style="width: 0%"></div>
++  237                         </div>
++  238                     </div>
++  239                 </div>
++  240                 
++  241                 <div id="daily-message" class="mt-4 p-3 bg-primary-50 dark:bg-primary-900/30 text-primary-800 dark:text-primary-200 rounded-lg text-sm md:text-base text-center font-semibold">
++  242                     💪 امروز روز عالی برای شروع تغذیه سالم است!
++  243                 </div>
++  244             </div>
++  245             
++  246             <!-- Add Food Form -->
++  247             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 mb-6 card-enter">
++  248                 <h2 class="text-xl md:text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">افزودن غذا</h2>
++  249                 
++  250                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
++  251                     <div>
++  252                         <label class="block text-sm md:text-base font-semibold mb-2">نام غذا</label>
++  253                         <input type="text" id="food-search" list="food-suggestions" placeholder="جستجو یا افزودن غذا..." class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
++  254                         <datalist id="food-suggestions"></datalist>
++  255                     </div>
++  256                     
++  257                     <div>
++  258                         <label class="block text-sm md:text-base font-semibold mb-2">مقدار (گرم)</label>
++  259                         <input type="number" id="food-amount" placeholder="100" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
++  260                     </div>
++  261                     
++  262                     <div>
++  263                         <label class="block text-sm md:text-base font-semibold mb-2">وعده غذایی</label>
++  264                         <select id="meal-type" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent">
++  265                             <option value="breakfast">صبحانه</option>
++  266                             <option value="lunch">ناهار</option>
++  267                             <option value="dinner">شام</option>
++  268                             <option value="snack">میان‌وعده</option>
++  269                         </select>
++  270                     </div>
++  271                 </div>
++  272                 
++  273                 <button onclick="addFoodToLog()" class="mt-4 w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold py-3 px-6 rounded-lg transition text-base md:text-lg">
++  274                     افزودن به لیست روزانه
++  275                 </button>
++  276             </div>
++  277             
++  278             <!-- Meals Log -->
++  279             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
++  280                 <!-- Breakfast -->
++  281                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 card-enter">
++  282                     <h3 class="text-lg md:text-xl font-bold mb-4 text-orange-600 dark:text-orange-400 flex items-center gap-2">
++  283                         <span>🌅</span> صبحانه
++  284                     </h3>
++  285                     <div id="meal-breakfast" class="space-y-2 min-h-[100px]">
++  286                         <p class="text-gray-400 text-sm md:text-base text-center py-8">هنوز چیزی اضافه نشده است</p>
++  287                     </div>
++  288                     <div id="meal-breakfast-summary" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs md:text-sm text-gray-600 dark:text-gray-400"></div>
++  289                 </div>
++  290                 
++  291                 <!-- Lunch -->
++  292                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 card-enter">
++  293                     <h3 class="text-lg md:text-xl font-bold mb-4 text-green-600 dark:text-green-400 flex items-center gap-2">
++  294                         <span>☀️</span> ناهار
++  295                     </h3>
++  296                     <div id="meal-lunch" class="space-y-2 min-h-[100px]">
++  297                         <p class="text-gray-400 text-sm md:text-base text-center py-8">هنوز چیزی اضافه نشده است</p>
++  298                     </div>
++  299                     <div id="meal-lunch-summary" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs md:text-sm text-gray-600 dark:text-gray-400"></div>
++  300                 </div>
++  301                 
++  302                 <!-- Dinner -->
++  303                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 card-enter">
++  304                     <h3 class="text-lg md:text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 flex items-center gap-2">
++  305                         <span>🌙</span> شام
++  306                     </h3>
++  307                     <div id="meal-dinner" class="space-y-2 min-h-[100px]">
++  308                         <p class="text-gray-400 text-sm md:text-base text-center py-8">هنوز چیزی اضافه نشده ��ست</p>
++  309                     </div>
++  310                     <div id="meal-dinner-summary" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs md:text-sm text-gray-600 dark:text-gray-400"></div>
++  311                 </div>
++  312                 
++  313                 <!-- Snack -->
++  314                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 card-enter">
++  315                     <h3 class="text-lg md:text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
++  316                         <span>🍎</span> میان‌وعده
++  317                     </h3>
++  318                     <div id="meal-snack" class="space-y-2 min-h-[100px]">
++  319                         <p class="text-gray-400 text-sm md:text-base text-center py-8">هنوز چیزی اضافه نشده است</p>
++  320                     </div>
++  321                     <div id="meal-snack-summary" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs md:text-sm text-gray-600 dark:text-gray-400"></div>
++  322                 </div>
++  323             </div>
++  324         </div>
++  325         
++  326         <!-- Database Tab -->
++  327         <div id="content-database" class="tab-content hidden">
++  328             
++  329             <!-- Bulk Parser -->
++  330             <div class="bg-gradient-to-br from-primary-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-lg p-4 md:p-6 mb-6 card-enter border-2 border-primary-200 dark:border-primary-700">
++  331                 <h2 class="text-xl md:text-2xl font-bold mb-2 text-primary-700 dark:text-primary-300">✨ افزودن سریع با متن</h2>
++  332                 <p class="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-4">هر خط = یک غذا. ویژگی‌ها را با علامت <code class="bg-white dark:bg-gray-800 px-2 py-1 rounded">|</code> جدا کنید.</p>
++  333                 
++  334                 <div class="bg-white dark:bg-gray-800 rounded-lg p-3 mb-3 text-xs md:text-sm">
++  335                     <strong>مثال:</strong><br>
++  336                     <code class="text-primary-600 dark:text-primary-400">سیب | کالری:52 | پروتئین:0.3 | چربی:0.2 | کربوهیدرات:14 | فیبر:2.4 | ویتامین C:4.6</code>
++  337                 </div>
++  338                 
++  339                 <textarea id="bulk-input" rows="6" placeholder="سیب | کالری:52 | پروتئین:0.3 | چربی:0.2&#10;تخم مرغ | کالری:155 | پروتئین:13 | چربی:11 | آهن:1.7&#10;مرغ | کالری:165 | پروتئین:31 | چربی:3.6" class="w-full px-4 py-3 text-base border-2 border-primary-300 dark:border-primary-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono"></textarea>
++  340                 
++  341                 <button onclick="parseBulkFood()" class="mt-4 w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition text-base md:text-lg shadow-lg">
++  342                     🚀 تبدیل و افزودن به پایگاه داده
++  343                 </button>
++  344             </div>
++  345             
++  346             <!-- Food Database Table -->
++  347             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 card-enter">
++  348                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
++  349                     <h2 class="text-xl md:text-2xl font-bold text-primary-600 dark:text-primary-400">پایگاه داده غذاها</h2>
++  350                     <div class="flex gap-2 w-full md:w-auto">
++  351                         <input type="text" id="database-search" placeholder="جستجو..." class="flex-1 md:w-64 px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  352                         <button onclick="addNewFood()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition whitespace-nowrap text-sm md:text-base">
++  353                             + افزودن
++  354                         </button>
++  355                     </div>
++  356                 </div>
++  357                 
++  358                 <div class="overflow-x-auto">
++  359                     <table class="w-full text-sm md:text-base">
++  360                         <thead class="bg-gray-100 dark:bg-gray-700">
++  361                             <tr>
++  362                                 <th class="px-4 py-3 text-right font-bold">نام غذا</th>
++  363                                 <th class="px-4 py-3 text-center font-bold">کالری</th>
++  364                                 <th class="px-4 py-3 text-center font-bold">پروتئین</th>
++  365                                 <th class="px-4 py-3 text-center font-bold">چربی</th>
++  366                                 <th class="px-4 py-3 text-center font-bold">کربو</th>
++  367                                 <th class="px-4 py-3 text-center font-bold">عملیات</th>
++  368                             </tr>
++  369                         </thead>
++  370                         <tbody id="database-table-body">
++  371                         </tbody>
++  372                     </table>
++  373                 </div>
++  374             </div>
++  375         </div>
++  376         
++  377         <!-- Reports Tab -->
++  378         <div id="content-reports" class="tab-content hidden">
++  379             
++  380             <!-- Summary Cards -->
++  381             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
++  382                 <div class="bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg p-6 text-white card-enter">
++  383                     <h3 class="text-lg font-semibold mb-2">کالری امروز</h3>
++  384                     <p id="report-today-calories" class="text-4xl font-bold">0</p>
++  385                     <p class="text-sm mt-2 opacity-90">از 2000 کالری</p>
++  386                 </div>
++  387                 
++  388                 <div class="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg p-6 text-white card-enter">
++  389                     <h3 class="text-lg font-semibold mb-2">پروتئین امروز</h3>
++  390                     <p id="report-today-protein" class="text-4xl font-bold">0g</p>
++  391                     <p class="text-sm mt-2 opacity-90">از 150 گرم</p>
++  392                 </div>
++  393                 
++  394                 <div class="bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-lg p-6 text-white card-enter">
++  395                     <h3 class="text-lg font-semibold mb-2">وعده‌های امروز</h3>
++  396                     <p id="report-today-meals" class="text-4xl font-bold">0</p>
++  397                     <p class="text-sm mt-2 opacity-90">غذای ثبت شده</p>
++  398                 </div>
++  399             </div>
++  400             
++  401             <!-- Charts -->
++  402             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
++  403                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-enter">
++  404                     <h3 class="text-xl font-bold mb-4 text-primary-600 dark:text-primary-400">توزیع درشت‌مغذی‌ها</h3>
++  405                     <canvas id="macros-chart"></canvas>
++  406                 </div>
++  407                 
++  408                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-enter">
++  409                     <h3 class="text-xl font-bold mb-4 text-primary-600 dark:text-primary-400">کالری به تفکیک وعده</h3>
++  410                     <canvas id="meals-chart"></canvas>
++  411                 </div>
++  412             </div>
++  413         </div>
++  414         
++  415         <!-- Settings Tab -->
++  416         <div id="content-settings" class="tab-content hidden">
++  417             
++  418             <!-- Personal Info -->
++  419             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 mb-6 card-enter">
++  420                 <h2 class="text-xl md:text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">اطلاعات شخصی و محاسبه TDEE</h2>
++  421                 
++  422                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
++  423                     <div>
++  424                         <label class="block text-sm md:text-base font-semibold mb-2">سن (سال)</label>
++  425                         <input type="number" id="setting-age" placeholder="25" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  426                     </div>
++  427                     
++  428                     <div>
++  429                         <label class="block text-sm md:text-base font-semibold mb-2">وزن (کیلوگرم)</label>
++  430                         <input type="number" id="setting-weight" placeholder="70" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  431                     </div>
++  432                     
++  433                     <div>
++  434                         <label class="block text-sm md:text-base font-semibold mb-2">قد (سانتی‌متر)</label>
++  435                         <input type="number" id="setting-height" placeholder="175" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  436                     </div>
++  437                     
++  438                     <div>
++  439                         <label class="block text-sm md:text-base font-semibold mb-2">جنسیت</label>
++  440                         <select id="setting-gender" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  441                             <option value="male">مرد</option>
++  442                             <option value="female">زن</option>
++  443                         </select>
++  444                     </div>
++  445                     
++  446                     <div>
++  447                         <label class="block text-sm md:text-base font-semibold mb-2">سطح فعالیت</label>
++  448                         <select id="setting-activity" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  449                             <option value="1.2">کم‌تحرک</option>
++  450                             <option value="1.375">فعالیت سبک</option>
++  451                             <option value="1.55" selected>فعالیت متوسط</option>
++  452                             <option value="1.725">فعالیت زیاد</option>
++  453                             <option value="1.9">فعالیت بسیار زیاد</option>
++  454                         </select>
++  455                     </div>
++  456                     
++  457                     <div>
++  458                         <label class="block text-sm md:text-base font-semibold mb-2">هدف</label>
++  459                         <select id="setting-goal" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  460                             <option value="-0.2">کاهش وزن (20%)</option>
++  461                             <option value="-0.1">کاهش وزن (10%)</option>
++  462                             <option value="0" selected>حفظ وزن</option>
++  463                             <option value="0.1">افزایش وزن (10%)</option>
++  464                             <option value="0.2">افزایش وزن (20%)</option>
++  465                         </select>
++  466                     </div>
++  467                 </div>
++  468                 
++  469                 <button onclick="calculateTDEE()" class="mt-4 w-full bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold py-3 px-6 rounded-lg transition text-base md:text-lg">
++  470                     محاسبه و ذخیره اهداف
++  471                 </button>
++  472                 
++  473                 <div id="tdee-result" class="mt-4 p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg hidden">
++  474                     <p class="text-primary-800 dark:text-primary-200 text-sm md:text-base"></p>
++  475                 </div>
++  476             </div>
++  477             
++  478             <!-- Diet Type -->
++  479             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 mb-6 card-enter">
++  480                 <h2 class="text-xl md:text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">نوع رژیم غذایی</h2>
++  481                 
++  482                 <select id="setting-diet" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  483                     <option value="balanced">متعادل</option>
++  484                     <option value="keto">کیتوژنیک (کم‌کربوهیدرات)</option>
++  485                     <option value="vegan">وگان (گیاهی)</option>
++  486                     <option value="low-carb">کم‌کربوهیدرات</option>
++  487                     <option value="high-protein">پرپروتئین (ورزشی)</option>
++  488                 </select>
++  489             </div>
++  490             
++  491             <!-- Data Management -->
++  492             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6 card-enter">
++  493                 <h2 class="text-xl md:text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">مدیریت داده‌ها</h2>
++  494                 
++  495                 <div class="space-y-3">
++  496                     <button onclick="exportDatabase()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition text-base">
++  497                         💾 دانلود دیتابیس (database.json)
++  498                     </button>
++  499                     
++  500                     <button onclick="importDatabase()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition text-base">
++  501                         📂 بارگذاری دیتابیس از فایل
++  502                     </button>
++  503                     
++  504                     <button onclick="resetAllData()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition text-base">
++  505                         🗑️ پاک کردن تمام داده‌ها
++  506                     </button>
++  507                 </div>
++  508             </div>
++  509         </div>
++  510         
++  511     </main>
++  512     
++  513     <!-- Toast Container -->
++  514     <div id="toast-container" class="fixed bottom-4 left-4 z-50 space-y-2"></div>
++  515     
++  516     <!-- Modal Container -->
++  517     <div id="modal-container"></div>
++  518     
++  519     <script>
++  520         // ======================
++  521         // Global State
++  522         // ======================
++  523         let appData = {
++  524             foodDatabase: [],
++  525             dailyLog: {
++  526                 breakfast: [],
++  527                 lunch: [],
++  528                 dinner: [],
++  529                 snack: []
++  530             },
++  531             goals: {
++  532                 calories: 2000,
++  533                 protein: 150,
++  534                 carbs: 250,
++  535                 fat: 70
++  536             },
++  537             settings: {
++  538                 age: 25,
++  539                 weight: 70,
++  540                 height: 175,
++  541                 gender: 'male',
++  542                 activity: 1.55,
++  543                 goal: 0,
++  544                 diet: 'balanced'
++  545             }
++  546         };
++  547         
++  548         let charts = {
++  549             macros: null,
++  550             meals: null
++  551         };
++  552         
++  553         // ======================
++  554         // Initialization
++  555         // ======================
++  556         document.addEventListener('DOMContentLoaded', async () => {
++  557             // Load theme
++  558             if (localStorage.getItem('theme') === 'dark' || 
++  559                 (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
++  560                 document.documentElement.classList.add('dark');
++  561             }
++  562             
++  563             // Load data
++  564             await loadAppData();
++  565             
++  566             // Initialize UI
++  567             updateUI();
++  568             updateDatabaseTable();
++  569             updateCharts();
++  570             
++  571             // Setup search
++  572             document.getElementById('database-search').addEventListener('input', filterDatabase);
++  573             document.getElementById('food-search').addEventListener('input', updateFoodSuggestions);
++  574         });
++  575         
++  576         // ======================
++  577         // Data Management
++  578         // ======================
++  579         async function loadAppData() {
++  580             const savedData = localStorage.getItem('smartCalorieApp_v1');
++  581             
++  582             if (savedData) {
++  583                 appData = JSON.parse(savedData);
++  584             } else {
++  585                 // Try to load from database.json
++  586                 try {
++  587                     const response = await fetch('./database.json');
++  588                     if (response.ok) {
++  589                         const data = await response.json();
++  590                         appData.foodDatabase = data.foods || [];
++  591                     }
++  592                 } catch (e) {
++  593                     console.log('No database.json found, starting fresh');
++  594                 }
++  595             }
++  596             
++  597             saveAppData();
++  598         }
++  599         
++  600         function saveAppData() {
++  601             localStorage.setItem('smartCalorieApp_v1', JSON.stringify(appData));
++  602         }
++  603         
++  604         // ======================
++  605         // Bulk Parser
++  606         // ======================
++  607         const KEY_MAP = [
++  608             [/کالری|calorie|انرژی/i, 'calories'],
++  609             [/پروتئین|protein/i, 'protein'],
++  610             [/کربوهیدرات|carb|کربو/i, 'carbs'],
++  611             [/چربی(?!.*اشباع)|fat(?!.*sat)/i, 'fat'],
++  612             [/چربی\s*اشباع|saturated/i, 'saturatedFat'],
++  613             [/چربی\s*غیراشباع|unsaturated/i, 'unsaturatedFat'],
++  614             [/فیبر|fiber/i, 'fiber'],
++  615             [/قند|sugar/i, 'sugar'],
++  616             [/آب|water/i, 'water'],
++  617             [/کلسترول|cholesterol/i, 'cholesterol'],
++  618             [/امگا\s*[-–]?\s*3|omega\s*3/i, 'omega3'],
++  619             [/امگا\s*[-–]?\s*6|omega\s*6/i, 'omega6'],
++  620             [/کلسیم|calcium/i, 'calcium'],
++  621             [/آهن|iron/i, 'iron'],
++  622             [/منیزیم|magnesium/i, 'magnesium'],
++  623             [/پتاسیم|potassium/i, 'potassium'],
++  624             [/سدیم|sodium/i, 'sodium'],
++  625             [/روی|zinc/i, 'zinc'],
++  626             [/سلنیوم|selenium/i, 'selenium'],
++  627             [/فسفر|phosphorus/i, 'phosphorus'],
++  628             [/ید|iodine/i, 'iodine'],
++  629             [/مس|copper/i, 'copper'],
++  630             [/منگنز|manganese/i, 'manganese'],
++  631             [/کروم|chromium/i, 'chromium'],
++  632             [/ویتامین\s*A|vitamin\s*A|vit\s*A/i, 'vitaminA'],
++  633             [/ویتامین\s*C|vitamin\s*C|vit\s*C/i, 'vitaminC'],
++  634             [/ویتامین\s*D|vitamin\s*D|vit\s*D/i, 'vitaminD'],
++  635             [/ویتامین\s*E|vitamin\s*E|vit\s*E/i, 'vitaminE'],
++  636             [/ویتامین\s*K|vitamin\s*K|vit\s*K/i, 'vitaminK'],
++  637             [/ویتامین\s*B1|vitamin\s*B1|تیامین/i, 'vitaminB1'],
++  638             [/ویتامین\s*B2|vitamin\s*B2|ریبوفلاوین/i, 'vitaminB2'],
++  639             [/ویتامین\s*B3|vitamin\s*B3|نیاسین/i, 'vitaminB3'],
++  640             [/ویتامین\s*B5|vitamin\s*B5|پانتوتنیک/i, 'vitaminB5'],
++  641             [/ویتامین\s*B6|vitamin\s*B6/i, 'vitaminB6'],
++  642             [/ویتامین\s*B7|vitamin\s*B7|بیوتین/i, 'vitaminB7'],
++  643             [/ویتامین\s*B9|vitamin\s*B9|فولات/i, 'vitaminB9'],
++  644             [/ویتامین\s*B12|vitamin\s*B12/i, 'vitaminB12'],
++  645             [/شاخص\s*گلیسمی|GI|glycemic/i, 'glycemicIndex']
++  646         ];
++  647         
++  648         function normalizeKey(k) {
++  649             for (const [rx, key] of KEY_MAP) {
++  650                 if (rx.test(k)) return key;
++  651             }
++  652             return k.replace(/\s+/g, '').toLowerCase();
++  653         }
++  654         
++  655         function parseBulkFood() {
++  656             const text = document.getElementById('bulk-input').value;
++  657             if (!text.trim()) {
++  658                 showToast('لطفاً متن را وارد کنید', 'error');
++  659                 return;
++  660             }
++  661             
++  662             const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
++  663             const foods = [];
++  664             const errors = [];
++  665             
++  666             lines.forEach((line, idx) => {
++  667                 try {
++  668                     let parts = line.split(/\||;/).map(p => p.trim()).filter(Boolean);
++  669                     if (parts.length === 0) return;
++  670                     
++  671                     let name = parts.shift();
++  672                     let food = { 
++  673                         name, 
++  674                         per100g: {},
++  675                         tags: [] 
++  676                     };
++  677                     
++  678                     parts.forEach(p => {
++  679                         let [rawKey, rawVal] = p.split(':').map(s => s?.trim());
++  680                         if (!rawKey || rawVal === undefined) return;
++  681                         
++  682                         let key = normalizeKey(rawKey);
++  683                         let val = rawVal.replace(/،/g, ',').trim();
++  684                         
++  685                         let numMatch = val.match(/([-+]?[0-9]*[.,]?[0-9]+)\s*(mg|µg|ug|g|kcal|kj|iu)?/i);
++  686                         if (numMatch) {
++  687                             let num = parseFloat(numMatch[1].replace(',', '.'));
++  688                             food.per100g[key] = num;
++  689                         }
++  690                     });
++  691                     
++  692                     foods.push(food);
++  693                 } catch (e) {
++  694                     errors.push({ line: idx + 1, text: line, error: e.message });
++  695                 }
++  696             });
++  697             
++  698             if (foods.length > 0) {
++  699                 appData.foodDatabase.push(...foods);
++  700                 saveAppData();
++  701                 updateDatabaseTable();
++  702                 document.getElementById('bulk-input').value = '';
++  703                 showToast(`✅ ${foods.length} غذا با موفقیت اضافه شد`, 'success');
++  704             }
++  705             
++  706             if (errors.length > 0) {
++  707                 showToast(`⚠️ ${errors.length} خط دارای خطا بود`, 'warning');
++  708             }
++  709         }
++  710         
++  711         // ======================
++  712         // Food Management
++  713         // ======================
++  714         function addFoodToLog() {
++  715             const foodName = document.getElementById('food-search').value.trim();
++  716             const amount = parseFloat(document.getElementById('food-amount').value);
++  717             const mealType = document.getElementById('meal-type').value;
++  718             
++  719             if (!foodName) {
++  720                 showToast('لطفاً نام غذا را وارد کنید', 'error');
++  721                 return;
++  722             }
++  723             
++  724             if (!amount || amount <= 0) {
++  725                 showToast('لطفاً مقدار معتبر وارد کنید', 'error');
++  726                 return;
++  727             }
++  728             
++  729             const food = appData.foodDatabase.find(f => f.name === foodName);
++  730             
++  731             if (!food) {
++  732                 showConfirmDialog(
++  733                     `غذای "${foodName}" در پایگاه داده یافت نشد. آیا می‌خواهید آن را اضافه کنید؟`,
++  734                     () => {
++  735                         addNewFood(foodName);
++  736                     }
++  737                 );
++  738                 return;
++  739             }
++  740             
++  741             appData.dailyLog[mealType].push({
++  742                 ...food,
++  743                 amount: amount,
++  744                 timestamp: Date.now()
++  745             });
++  746             
++  747             saveAppData();
++  748             updateUI();
++  749             
++  750             document.getElementById('food-search').value = '';
++  751             document.getElementById('food-amount').value = '';
++  752             
++  753             showToast(`✅ ${foodName} به ${getMealTitle(mealType)} اضافه شد`, 'success');
++  754         }
++  755         
++  756         function removeFoodFromLog(mealType, index) {
++  757             showConfirmDialog(
++  758                 'آیا از حذف این غذا مطمئن هستید؟',
++  759                 () => {
++  760                     appData.dailyLog[mealType].splice(index, 1);
++  761                     saveAppData();
++  762                     updateUI();
++  763                     showToast('غذا حذف شد', 'success');
++  764                 }
++  765             );
++  766         }
++  767         
++  768         function addNewFood(defaultName = '') {
++  769             const modal = showModal('افزودن غذای جدید', `
++  770                 <div class="space-y-4">
++  771                     <div>
++  772                         <label class="block text-sm font-semibold mb-2">نام غذا</label>
++  773                         <input type="text" id="new-food-name" value="${defaultName}" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500">
++  774                     </div>
++  775                     <div class="grid grid-cols-2 gap-4">
++  776                         <div>
++  777                             <label class="block text-sm font-semibold mb-2">کالری</label>
++  778                             <input type="number" id="new-food-calories" placeholder="0" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
++  779                         </div>
++  780                         <div>
++  781                             <label class="block text-sm font-semibold mb-2">پروتئین (g)</label>
++  782                             <input type="number" id="new-food-protein" placeholder="0" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
++  783                         </div>
++  784                         <div>
++  785                             <label class="block text-sm font-semibold mb-2">کربوهیدرات (g)</label>
++  786                             <input type="number" id="new-food-carbs" placeholder="0" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
++  787                         </div>
++  788                         <div>
++  789                             <label class="block text-sm font-semibold mb-2">چربی (g)</label>
++  790                             <input type="number" id="new-food-fat" placeholder="0" class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
++  791                         </div>
++  792                     </div>
++  793                     <div class="flex gap-2">
++  794                         <button onclick="saveNewFood()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-lg">
++  795                             ذخیره
++  796                         </button>
++  797                         <button onclick="closeModal()" class="flex-1 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-white font-bold py-3 rounded-lg">
++  798                             انصراف
++  799                         </button>
++  800                     </div>
++  801                 </div>
++  802             `);
++  803         }
++  804         
++  805         function saveNewFood() {
++  806             const name = document.getElementById('new-food-name').value.trim();
++  807             const calories = parseFloat(document.getElementById('new-food-calories').value) || 0;
++  808             const protein = parseFloat(document.getElementById('new-food-protein').value) || 0;
++  809             const carbs = parseFloat(document.getElementById('new-food-carbs').value) || 0;
++  810             const fat = parseFloat(document.getElementById('new-food-fat').value) || 0;
++  811             
++  812             if (!name) {
++  813                 showToast('لطفاً نا�� غذا را وارد کنید', 'error');
++  814                 return;
++  815             }
++  816             
++  817             const newFood = {
++  818                 name,
++  819                 per100g: {
++  820                     calories,
++  821                     protein,
++  822                     carbs,
++  823                     fat
++  824                 },
++  825                 tags: []
++  826             };
++  827             
++  828             appData.foodDatabase.push(newFood);
++  829             saveAppData();
++  830             updateDatabaseTable();
++  831             closeModal();
++  832             showToast(`✅ ${name} به پایگاه داده اضافه شد`, 'success');
++  833         }
++  834         
++  835         function deleteFood(index) {
++  836             showConfirmDialog(
++  837                 'آیا از حذف این غذا از پایگاه داده مطمئن هستید؟',
++  838                 () => {
++  839                     appData.foodDatabase.splice(index, 1);
++  840                     saveAppData();
++  841                     updateDatabaseTable();
++  842                     showToast('غذا حذف شد', 'success');
++  843                 }
++  844             );
++  845         }
++  846         
++  847         // ======================
++  848         // UI Updates
++  849         // ======================
++  850         function updateUI() {
++  851             updateProgressBars();
++  852             updateMealsDisplay();
++  853             updateReportsSummary();
++  854             updateCharts();
++  855         }
++  856         
++  857         function updateProgressBars() {
++  858             const totals = calculateDailyTotals();
++  859             const goals = appData.goals;
++  860             
++  861             // Calories
++  862             const caloriesPercent = Math.min((totals.calories / goals.calories) * 100, 100);
++  863             document.getElementById('progress-calories').style.width = caloriesPercent + '%';
++  864             document.getElementById('progress-calories-text').textContent = `${Math.round(totals.calories)} / ${goals.calories}`;
++  865             
++  866             // Protein
++  867             const proteinPercent = Math.min((totals.protein / goals.protein) * 100, 100);
++  868             document.getElementById('progress-protein').style.width = proteinPercent + '%';
++  869             document.getElementById('progress-protein-text').textContent = `${Math.round(totals.protein)}g / ${goals.protein}g`;
++  870             
++  871             // Carbs
++  872             const carbsPercent = Math.min((totals.carbs / goals.carbs) * 100, 100);
++  873             document.getElementById('progress-carbs').style.width = carbsPercent + '%';
++  874             document.getElementById('progress-carbs-text').textContent = `${Math.round(totals.carbs)}g / ${goals.carbs}g`;
++  875             
++  876             // Fat
++  877             const fatPercent = Math.min((totals.fat / goals.fat) * 100, 100);
++  878             document.getElementById('progress-fat').style.width = fatPercent + '%';
++  879             document.getElementById('progress-fat-text').textContent = `${Math.round(totals.fat)}g / ${goals.fat}g`;
++  880             
++  881             // Daily message
++  882             const avgPercent = (caloriesPercent + proteinPercent + carbsPercent + fatPercent) / 4;
++  883             let message = '';
++  884             if (avgPercent < 30) {
++  885                 message = '🌱 روز شما به خوبی شروع شد! به پیشرفت خود ادامه دهید';
++  886             } else if (avgPercent < 70) {
++  887                 message = '💪 عالی! در مسیر درست قرار دارید';
++  888             } else if (avgPercent < 95) {
++  889                 message = '🎯 فوق‌��لعاده! تقریباً به هدف روزانه رسیدید';
++  890             } else {
++  891                 message = '🏆 تبریک! به هدف روزانه خود رسیدید';
++  892             }
++  893             document.getElementById('daily-message').textContent = message;
++  894         }
++  895         
++  896         function updateMealsDisplay() {
++  897             const meals = ['breakfast', 'lunch', 'dinner', 'snack'];
++  898             
++  899             meals.forEach(meal => {
++  900                 const container = document.getElementById(`meal-${meal}`);
++  901                 const summaryContainer = document.getElementById(`meal-${meal}-summary`);
++  902                 const foods = appData.dailyLog[meal];
++  903                 
++  904                 if (foods.length === 0) {
++  905                     container.innerHTML = '<p class="text-gray-400 text-sm md:text-base text-center py-8">هنوز چیزی اضافه نشده است</p>';
++  906                     summaryContainer.innerHTML = '';
++  907                     return;
++  908                 }
++  909                 
++  910                 let html = '';
++  911                 let totalCal = 0, totalPro = 0, totalCarb = 0, totalFat = 0;
++  912                 
++  913                 foods.forEach((food, idx) => {
++  914                     const multiplier = food.amount / 100;
++  915                     const cal = (food.per100g.calories || 0) * multiplier;
++  916                     const pro = (food.per100g.protein || 0) * multiplier;
++  917                     const carb = (food.per100g.carbs || 0) * multiplier;
++  918                     const fat = (food.per100g.fat || 0) * multiplier;
++  919                     
++  920                     totalCal += cal;
++  921                     totalPro += pro;
++  922                     totalCarb += carb;
++  923                     totalFat += fat;
++  924                     
++  925                     html += `
++  926                         <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
++  927                             <div class="flex-1">
++  928                                 <div class="font-semibold text-sm md:text-base">${food.name}</div>
++  929                                 <div class="text-xs md:text-sm text-gray-500 dark:text-gray-400">${food.amount}g • ${Math.round(cal)} کالری</div>
++  930                             </div>
++  931                             <button onclick="removeFoodFromLog('${meal}', ${idx})" class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition">
++  932                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++  933                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
++  934                                 </svg>
++  935                             </button>
++  936                         </div>
++  937                     `;
++  938                 });
++  939                 
++  940                 container.innerHTML = html;
++  941                 summaryContainer.innerHTML = `
++  942                     <strong>جمع:</strong> 
++  943                     ${Math.round(totalCal)} کالری • 
++  944                     ${Math.round(totalPro)}g پروتئین • 
++  945                     ${Math.round(totalCarb)}g کربوهیدرات • 
++  946                     ${Math.round(totalFat)}g چربی
++  947                 `;
++  948             });
++  949         }
++  950         
++  951         function updateDatabaseTable() {
++  952             const tbody = document.getElementById('database-table-body');
++  953             const searchTerm = document.getElementById('database-search').value.toLowerCase();
++  954             
++  955             const filtered = appData.foodDatabase.filter(food => 
++  956                 food.name.toLowerCase().includes(searchTerm)
++  957             );
++  958             
++  959             if (filtered.length === 0) {
++  960                 tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">هیچ غذایی یافت نشد</td></tr>';
++  961                 return;
++  962             }
++  963             
++  964             let html = '';
++  965             filtered.forEach((food, idx) => {
++  966                 const actualIndex = appData.foodDatabase.indexOf(food);
++  967                 html += `
++  968                     <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
++  969                         <td class="px-4 py-3 font-semibold">${food.name}</td>
++  970                         <td class="px-4 py-3 text-center">${food.per100g.calories || 0}</td>
++  971                         <td class="px-4 py-3 text-center">${food.per100g.protein || 0}</td>
++  972                         <td class="px-4 py-3 text-center">${food.per100g.fat || 0}</td>
++  973                         <td class="px-4 py-3 text-center">${food.per100g.carbs || 0}</td>
++  974                         <td class="px-4 py-3 text-center">
++  975                             <button onclick="deleteFood(${actualIndex})" class="text-red-600 hover:text-red-800 dark:hover:text-red-400 transition">
++  976                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++  977                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
++  978                                 </svg>
++  979                             </button>
++  980                         </td>
++  981                     </tr>
++  982                 `;
++  983             });
++  984             
++  985             tbody.innerHTML = html;
++  986         }
++  987         
++  988         function updateReportsSummary() {
++  989             const totals = calculateDailyTotals();
++  990             const totalMeals = Object.values(appData.dailyLog).reduce((sum, meals) => sum + meals.length, 0);
++  991             
++  992             document.getElementById('report-today-calories').textContent = Math.round(totals.calories);
++  993             document.getElementById('report-today-protein').textContent = Math.round(totals.protein) + 'g';
++  994             document.getElementById('report-today-meals').textContent = totalMeals;
++  995         }
++  996         
++  997         function updateCharts() {
++  998             const totals = calculateDailyTotals();
++  999             
++ 1000             // Macros Pie Chart
++ 1001             const macrosCtx = document.getElementById('macros-chart');
++ 1002             if (charts.macros) charts.macros.destroy();
++ 1003             
++ 1004             charts.macros = new Chart(macrosCtx, {
++ 1005                 type: 'pie',
++ 1006                 data: {
++ 1007                     labels: ['پروتئین', 'کربوهیدرات', 'چربی'],
++ 1008                     datasets: [{
++ 1009                         data: [
++ 1010                             totals.protein * 4,
++ 1011                             totals.carbs * 4,
++ 1012                             totals.fat * 9
++ 1013                         ],
++ 1014                         backgroundColor: [
++ 1015                             'rgba(59, 130, 246, 0.8)',
++ 1016                             'rgba(34, 197, 94, 0.8)',
++ 1017                             'rgba(251, 191, 36, 0.8)'
++ 1018                         ],
++ 1019                         borderWidth: 2,
++ 1020                         borderColor: '#fff'
++ 1021                     }]
++ 1022                 },
++ 1023                 options: {
++ 1024                     responsive: true,
++ 1025                     plugins: {
++ 1026                         legend: {
++ 1027                             position: 'bottom',
++ 1028                             labels: {
++ 1029                                 font: { family: 'Vazirmatn', size: 14 },
++ 1030                                 color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
++ 1031                             }
++ 1032                         }
++ 1033                     }
++ 1034                 }
++ 1035             });
++ 1036             
++ 1037             // Meals Bar Chart
++ 1038             const mealsCtx = document.getElementById('meals-chart');
++ 1039             if (charts.meals) charts.meals.destroy();
++ 1040             
++ 1041             const mealTotals = {
++ 1042                 breakfast: calculateMealTotals('breakfast'),
++ 1043                 lunch: calculateMealTotals('lunch'),
++ 1044                 dinner: calculateMealTotals('dinner'),
++ 1045                 snack: calculateMealTotals('snack')
++ 1046             };
++ 1047             
++ 1048             charts.meals = new Chart(mealsCtx, {
++ 1049                 type: 'bar',
++ 1050                 data: {
++ 1051                     labels: ['صبحانه', 'ناهار', 'شام', 'میان‌وعده'],
++ 1052                     datasets: [{
++ 1053                         label: 'کالری',
++ 1054                         data: [
++ 1055                             mealTotals.breakfast.calories,
++ 1056                             mealTotals.lunch.calories,
++ 1057                             mealTotals.dinner.calories,
++ 1058                             mealTotals.snack.calories
++ 1059                         ],
++ 1060                         backgroundColor: [
++ 1061                             'rgba(251, 146, 60, 0.8)',
++ 1062                             'rgba(34, 197, 94, 0.8)',
++ 1063                             'rgba(59, 130, 246, 0.8)',
++ 1064                             'rgba(168, 85, 247, 0.8)'
++ 1065                         ],
++ 1066                         borderWidth: 2,
++ 1067                         borderColor: '#fff',
++ 1068                         borderRadius: 8
++ 1069                     }]
++ 1070                 },
++ 1071                 options: {
++ 1072                     responsive: true,
++ 1073                     plugins: {
++ 1074                         legend: {
++ 1075                             display: false
++ 1076                         }
++ 1077                     },
++ 1078                     scales: {
++ 1079                         y: {
++ 1080                             beginAtZero: true,
++ 1081                             ticks: {
++ 1082                                 font: { family: 'Vazirmatn' },
++ 1083                                 color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
++ 1084                             },
++ 1085                             grid: {
++ 1086                                 color: document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
++ 1087                             }
++ 1088                         },
++ 1089                         x: {
++ 1090                             ticks: {
++ 1091                                 font: { family: 'Vazirmatn' },
++ 1092                                 color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
++ 1093                             },
++ 1094                             grid: {
++ 1095                                 display: false
++ 1096                             }
++ 1097                         }
++ 1098                     }
++ 1099                 }
++ 1100             });
++ 1101         }
++ 1102         
++ 1103         function updateFoodSuggestions() {
++ 1104             const datalist = document.getElementById('food-suggestions');
++ 1105             const searchTerm = document.getElementById('food-search').value.toLowerCase();
++ 1106             
++ 1107             const matches = appData.foodDatabase
++ 1108                 .filter(f => f.name.toLowerCase().includes(searchTerm))
++ 1109                 .slice(0, 10);
++ 1110             
++ 1111             datalist.innerHTML = matches.map(f => `<option value="${f.name}">`).join('');
++ 1112         }
++ 1113         
++ 1114         // ======================
++ 1115         // Calculations
++ 1116         // ======================
++ 1117         function calculateDailyTotals() {
++ 1118             let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
++ 1119             
++ 1120             Object.values(appData.dailyLog).forEach(meals => {
++ 1121                 meals.forEach(food => {
++ 1122                     const multiplier = food.amount / 100;
++ 1123                     totals.calories += (food.per100g.calories || 0) * multiplier;
++ 1124                     totals.protein += (food.per100g.protein || 0) * multiplier;
++ 1125                     totals.carbs += (food.per100g.carbs || 0) * multiplier;
++ 1126                     totals.fat += (food.per100g.fat || 0) * multiplier;
++ 1127                 });
++ 1128             });
++ 1129             
++ 1130             return totals;
++ 1131         }
++ 1132         
++ 1133         function calculateMealTotals(mealType) {
++ 1134             let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
++ 1135             
++ 1136             appData.dailyLog[mealType].forEach(food => {
++ 1137                 const multiplier = food.amount / 100;
++ 1138                 totals.calories += (food.per100g.calories || 0) * multiplier;
++ 1139                 totals.protein += (food.per100g.protein || 0) * multiplier;
++ 1140                 totals.carbs += (food.per100g.carbs || 0) * multiplier;
++ 1141                 totals.fat += (food.per100g.fat || 0) * multiplier;
++ 1142             });
++ 1143             
++ 1144             return totals;
++ 1145         }
++ 1146         
++ 1147         function calculateTDEE() {
++ 1148             const age = parseInt(document.getElementById('setting-age').value);
++ 1149             const weight = parseFloat(document.getElementById('setting-weight').value);
++ 1150             const height = parseFloat(document.getElementById('setting-height').value);
++ 1151             const gender = document.getElementById('setting-gender').value;
++ 1152             const activity = parseFloat(document.getElementById('setting-activity').value);
++ 1153             const goal = parseFloat(document.getElementById('setting-goal').value);
++ 1154             
++ 1155             if (!age || !weight || !height) {
++ 1156                 showToast('لطفاً تمام فیلدها را پر کنید', 'error');
++ 1157                 return;
++ 1158             }
++ 1159             
++ 1160             // Mifflin-St Jeor Formula
++ 1161             let bmr;
++ 1162             if (gender === 'male') {
++ 1163                 bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
++ 1164             } else {
++ 1165                 bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
++ 1166             }
++ 1167             
++ 1168             const tdee = bmr * activity;
++ 1169             const targetCalories = Math.round(tdee * (1 + goal));
++ 1170             
++ 1171             // Macro goals (example distribution)
++ 1172             const proteinGrams = Math.round(weight * 2); // 2g per kg
++ 1173             const fatGrams = Math.round((targetCalories * 0.25) / 9); // 25% of calories
++ 1174             const carbGrams = Math.round((targetCalories - (proteinGrams * 4) - (fatGrams * 9)) / 4);
++ 1175             
++ 1176             appData.goals = {
++ 1177                 calories: targetCalories,
++ 1178                 protein: proteinGrams,
++ 1179                 carbs: carbGrams,
++ 1180                 fat: fatGrams
++ 1181             };
++ 1182             
++ 1183             appData.settings = {
++ 1184                 age, weight, height, gender, activity, goal,
++ 1185                 diet: document.getElementById('setting-diet').value
++ 1186             };
++ 1187             
++ 1188             saveAppData();
++ 1189             updateUI();
++ 1190             
++ 1191             const resultDiv = document.getElementById('tdee-result');
++ 1192             resultDiv.classList.remove('hidden');
++ 1193             resultDiv.querySelector('p').innerHTML = `
++ 1194                 <strong>نتایج محاسبه:</strong><br>
++ 1195                 BMR شما: ${Math.round(bmr)} کالری<br>
++ 1196                 TDEE شما: ${Math.round(tdee)} کالری<br>
++ 1197                 هدف کالری روزانه: ${targetCalories} کالری<br>
++ 1198                 پروتئین: ${proteinGrams}g | کربوهیدرات: ${carbGrams}g | چربی: ${fatGrams}g
++ 1199             `;
++ 1200             
++ 1201             showToast('✅ اهداف شما محاسبه و ذخیره شد', 'success');
++ 1202         }
++ 1203         
++ 1204         // ======================
++ 1205         // Data Import/Export
++ 1206         // ======================
++ 1207         function exportData() {
++ 1208             const dataStr = JSON.stringify(appData, null, 2);
++ 1209             const blob = new Blob([dataStr], { type: 'application/json' });
++ 1210             const url = URL.createObjectURL(blob);
++ 1211             const a = document.createElement('a');
++ 1212             a.href = url;
++ 1213             a.download = `smart-calorie-backup-${new Date().toISOString().split('T')[0]}.json`;
++ 1214             a.click();
++ 1215             URL.revokeObjectURL(url);
++ 1216             showToast('✅ فایل پشتیبان دانلود شد', 'success');
++ 1217         }
++ 1218         
++ 1219         function importData() {
++ 1220             const input = document.createElement('input');
++ 1221             input.type = 'file';
++ 1222             input.accept = '.json';
++ 1223             input.onchange = e => {
++ 1224                 const file = e.target.files[0];
++ 1225                 const reader = new FileReader();
++ 1226                 reader.onload = event => {
++ 1227                     try {
++ 1228                         const data = JSON.parse(event.target.result);
++ 1229                         appData = data;
++ 1230                         saveAppData();
++ 1231                         updateUI();
++ 1232                         updateDatabaseTable();
++ 1233                         showToast('✅ داده‌ها با موفقیت بازیابی شد', 'success');
++ 1234                     } catch (error) {
++ 1235                         showToast('❌ فایل نامعتبر است', 'error');
++ 1236                     }
++ 1237                 };
++ 1238                 reader.readAsText(file);
++ 1239             };
++ 1240             input.click();
++ 1241         }
++ 1242         
++ 1243         function exportDatabase() {
++ 1244             const databaseData = {
++ 1245                 foods: appData.foodDatabase,
++ 1246                 version: '1.0',
++ 1247                 exportDate: new Date().toISOString()
++ 1248             };
++ 1249             
++ 1250             const dataStr = JSON.stringify(databaseData, null, 2);
++ 1251             const blob = new Blob([dataStr], { type: 'application/json' });
++ 1252             const url = URL.createObjectURL(blob);
++ 1253             const a = document.createElement('a');
++ 1254             a.href = url;
++ 1255             a.download = 'database.json';
++ 1256             a.click();
++ 1257             URL.revokeObjectURL(url);
++ 1258             showToast('✅ دیتابیس دانلود شد', 'success');
++ 1259         }
++ 1260         
++ 1261         function importDatabase() {
++ 1262             const input = document.createElement('input');
++ 1263             input.type = 'file';
++ 1264             input.accept = '.json';
++ 1265             input.onchange = e => {
++ 1266                 const file = e.target.files[0];
++ 1267                 const reader = new FileReader();
++ 1268                 reader.onload = event => {
++ 1269                     try {
++ 1270                         const data = JSON.parse(event.target.result);
++ 1271                         if (data.foods && Array.isArray(data.foods)) {
++ 1272                             appData.foodDatabase = data.foods;
++ 1273                             saveAppData();
++ 1274                             updateDatabaseTable();
++ 1275                             showToast('✅ دیتابیس با موفقیت بارگذاری شد', 'success');
++ 1276                         } else {
++ 1277                             showToast('❌ فرمت فایل نامعتبر است', 'error');
++ 1278                         }
++ 1279                     } catch (error) {
++ 1280                         showToast('❌ خطا در خواندن فایل', 'error');
++ 1281                     }
++ 1282                 };
++ 1283                 reader.readAsText(file);
++ 1284             };
++ 1285             input.click();
++ 1286         }
++ 1287         
++ 1288         function resetAllData() {
++ 1289             showConfirmDialog(
++ 1290                 'آیا از پاک کردن تمام داده‌ها مطمئن هستید؟ این عمل غیرقابل بازگشت است!',
++ 1291                 () => {
++ 1292                     localStorage.removeItem('smartCalorieApp_v1');
++ 1293                     location.reload();
++ 1294                 }
++ 1295             );
++ 1296         }
++ 1297         
++ 1298         // ======================
++ 1299         // UI Helpers
++ 1300         // ======================
++ 1301         function switchTab(tabName) {
++ 1302             // Hide all tabs
++ 1303             document.querySelectorAll('.tab-content').forEach(tab => {
++ 1304                 tab.classList.add('hidden');
++ 1305             });
++ 1306             
++ 1307             // Show selected tab
++ 1308             document.getElementById(`content-${tabName}`).classList.remove('hidden');
++ 1309             
++ 1310             // Update tab buttons
++ 1311             document.querySelectorAll('.tab-btn').forEach(btn => {
++ 1312                 btn.classList.remove('text-primary-600', 'dark:text-primary-400', 'border-primary-500');
++ 1313                 btn.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
++ 1314             });
++ 1315             
++ 1316             const activeBtn = document.getElementById(`tab-${tabName}`);
++ 1317             activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
++ 1318             activeBtn.classList.add('text-primary-600', 'dark:text-primary-400', 'border-primary-500');
++ 1319             
++ 1320             // Update charts if reports tab
++ 1321             if (tabName === 'reports') {
++ 1322                 updateCharts();
++ 1323             }
++ 1324         }
++ 1325         
++ 1326         function toggleTheme() {
++ 1327             document.documentElement.classList.toggle('dark');
++ 1328             const isDark = document.documentElement.classList.contains('dark');
++ 1329             localStorage.setItem('theme', isDark ? 'dark' : 'light');
++ 1330             
++ 1331             // Update charts colors
++ 1332             if (charts.macros || charts.meals) {
++ 1333                 updateCharts();
++ 1334             }
++ 1335         }
++ 1336         
++ 1337         function showToast(message, type = 'info') {
++ 1338             const container = document.getElementById('toast-container');
++ 1339             const toast = document.createElement('div');
++ 1340             
++ 1341             const colors = {
++ 1342                 success: 'bg-green-600',
++ 1343                 error: 'bg-red-600',
++ 1344                 warning: 'bg-yellow-600',
++ 1345                 info: 'bg-blue-600'
++ 1346             };
++ 1347             
++ 1348             toast.className = `toast ${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg max-w-sm text-base`;
++ 1349             toast.textContent = message;
++ 1350             
++ 1351             container.appendChild(toast);
++ 1352             
++ 1353             setTimeout(() => {
++ 1354                 toast.style.opacity = '0';
++ 1355                 toast.style.transform = 'translateX(400px)';
++ 1356                 setTimeout(() => toast.remove(), 300);
++ 1357             }, 3000);
++ 1358         }
++ 1359         
++ 1360         function showModal(title, content) {
++ 1361             const modalContainer = document.getElementById('modal-container');
++ 1362             modalContainer.innerHTML = `
++ 1363                 <div class="modal-backdrop fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onclick="if(event.target === this) closeModal()">
++ 1364                     <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
++ 1365                         <h2 class="text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">${title}</h2>
++ 1366                         ${content}
++ 1367                     </div>
++ 1368                 </div>
++ 1369             `;
++ 1370         }
++ 1371         
++ 1372         function closeModal() {
++ 1373             document.getElementById('modal-container').innerHTML = '';
++ 1374         }
++ 1375         
++ 1376         function showConfirmDialog(message, onConfirm) {
++ 1377             const modal = document.getElementById('modal-container');
++ 1378             modal.innerHTML = `
++ 1379                 <div class="modal-backdrop fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
++ 1380                     <div class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
++ 1381                         <p class="text-gray-700 dark:text-gray-300 mb-6 text-base md:text-lg">${message}</p>
++ 1382                         <div class="flex gap-3">
++ 1383                             <button onclick="closeModal()" class="flex-1 px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition font-semibold">
++ 1384                                 انصراف
++ 1385                             </button>
++ 1386                             <button onclick="closeModal(); (${onConfirm.toString()})()" class="flex-1 px-4 py-3 bg-red-500 text-white hover:bg-red-600 rounded-lg transition font-semibold">
++ 1387                                 تأیید
++ 1388                             </button>
++ 1389                         </div>
++ 1390                     </div>
++ 1391                 </div>
++ 1392             `;
++ 1393         }
++ 1394         
++ 1395         function filterDatabase() {
++ 1396             updateDatabaseTable();
++ 1397         }
++ 1398         
++ 1399         function getMealTitle(meal) {
++ 1400             const titles = {
++ 1401                 breakfast: 'صبحانه',
++ 1402                 lunch: 'ناهار',
++ 1403                 dinner: 'شام',
++ 1404                 snack: 'میان‌وعده'
++ 1405             };
++ 1406             return titles[meal] || meal;
++ 1407         }
++ 1408         
++ 1409         // Listen for theme changes
++ 1410         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
++ 1411             if (!localStorage.getItem('theme')) {
++ 1412                 if (event.matches) {
++ 1413                     document.documentElement.classList.add('dark');
++ 1414                 } else {
++ 1415                     document.documentElement.classList.remove('dark');
++ 1416                 }
++ 1417                 updateCharts();
++ 1418             }
++ 1419         });
++ 1420     </script>
++ 1421 </body>
++ 1422 </html>
